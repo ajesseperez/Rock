@@ -257,10 +257,21 @@ namespace Rock.Jobs
                                 continue;
                             }
 
+                            /*
+                                     2/8/2024 - JSC
+
+                                     When called without a cutoff date for new installs it is possible to reach this point
+                                     with an InteractionSession that has no Interactions; therefore include a check for Interactions.Any()
+
+                                     Reason: Prevents InvalidOperationException
+                            */
                             // Special Query to only get what we need to know.
                             // This could cause a lot of database calls, but it is consistently just a few milliseconds.
                             // This seems to increase overall performance vs Eager loading all the interactions of the session
-                            var interactionStats = new InteractionSessionService( rockContext ).Queryable().Where( a => a.Id == interactionSession.Id ).Select( s => new
+                            var interactionStats = new InteractionSessionService( rockContext ).Queryable()
+                                .Where( a => a.Interactions.Any() )
+                                .Where( a => a.Id == interactionSession.Id )
+                                .Select( s => new
                             {
                                 Count = s.Interactions.Count(),
                                 MaxDateTime = s.Interactions.Max( i => ( DateTime? ) i.InteractionDateTime ),
